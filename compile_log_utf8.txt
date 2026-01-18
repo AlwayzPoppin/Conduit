@@ -1,0 +1,47 @@
+﻿
+> conduit@0.6.3 compile
+> tsc -p ./
+
+src/test/runTest.ts(2,26): error TS2307: Cannot find module '@vscode/test-electron' or its corresponding type declarations.
+src/test/suite/index.ts(3,22): error TS2307: Cannot find module 'glob' or its corresponding type declarations.
+src/test/suite/index.ts(19,23): error TS7006: Parameter 'f' implicitly has an 'any' type.
+node.exe : npm error 
+Lifecycle script 
+`compile` failed 
+with error:
+At line:1 char:1
++ & "C:\Program Files
+\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (npm err   
+ or Lifec...led w    
+ith error::Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+npm error code 2
+npm error path C:\Use
+rs\wattz\NexGen-Meta\
+Conduit
+npm error workspace 
+conduit@0.6.3
+npm error location C:
+\Users\wattz\NexGen-M
+eta\Conduit
+npm error command 
+failed
+npm error command C:\
+Windows\system32\cmd.
+exe /d /s /c tsc -p 
+./

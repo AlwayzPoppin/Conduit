@@ -1,0 +1,63 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Compiled output
+out/
+dist/
+*.js.map
+
+# VS Code extension artifacts
+*.vsix
+
+# Test artifacts
+.vscode-test/
+test-results/
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor directories and files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# TiskTask workspace state (user-specific)
+.tisktask/
+# .conduit/
+# .agent/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+.idea/
+
+# Build artifacts
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.bak
+*.backup
+context.json.bak.*
+summary.txt
+write_test.txt

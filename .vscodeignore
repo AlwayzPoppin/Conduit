@@ -1,0 +1,16 @@
+node_modules/**
+*
+!out/**
+!media/**
+!assets/**
+!nexus_panel.html
+!package.json
+!LICENSE
+!icon.png
+!media/icon.png
+!media/icon.svg
+!media/ConduitIcon.png
+!media/ExtensionLensIcon.png
+!media/LaunchpadIcon.png
+!ConduitIcon.png
+!media/ConduitIcon.png

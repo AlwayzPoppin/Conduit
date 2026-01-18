@@ -1,0 +1,217 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Conduit Context Schema",
+    "type": "object",
+    "properties": {
+        "session": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "started": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "activeFiles": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "currentTask": {
+            "type": "string"
+        },
+        "historySummary": {
+            "type": "string"
+        },
+        "contributions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "const": "contribution"
+                    },
+                    "agent": {
+                        "type": "string"
+                    },
+                    "action": {
+                        "type": "string"
+                    },
+                    "files": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            }
+        },
+        "handoffs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "const": "handoff"
+                    },
+                    "agent": {
+                        "type": "string"
+                    },
+                    "suggestion": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "sessionId": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "plans": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "task": {
+                        "type": "string"
+                    },
+                    "assignee": {
+                        "type": "string"
+                    },
+                    "priority": {
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high",
+                            "critical"
+                        ]
+                    },
+                    "dependsOn": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "enum": [
+                            "pending",
+                            "needs-review",
+                            "approved",
+                            "needs-revision",
+                            "in-progress",
+                            "done"
+                        ]
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "reviews": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "reviewer": {
+                                    "type": "string"
+                                },
+                                "critique": {
+                                    "type": "string"
+                                },
+                                "timestamp": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "latestResults": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "commandId": {
+                        "type": "string"
+                    },
+                    "command": {
+                        "type": "string"
+                    },
+                    "exitCode": {
+                        "type": "integer"
+                    },
+                    "stdout": {
+                        "type": "string"
+                    },
+                    "stderr": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "preferences": {
+            "type": "object",
+            "properties": {
+                "sync": {
+                    "type": "boolean"
+                },
+                "hideDone": {
+                    "type": "boolean"
+                },
+                "autoRefresh": {
+                    "type": "boolean"
+                },
+                "audioAlerts": {
+                    "type": "boolean"
+                },
+                "hideDonePlans": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": true
+        },
+        "lastSync": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "agentIntents": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "intent": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "enum": [
+                            "idle",
+                            "working",
+                            "blocked"
+                        ]
+                    },
+                    "lastUpdate": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,181 @@
+{
+    "name": "conduit",
+    "displayName": "Conduit",
+    "description": "The NexGen Suite Conductor: Autonomous Task Orchestration and Workspace Intelligence",
+    "version": "0.6.3",
+    "icon": "media/ConduitIcon.png",
+    "license": "MIT",
+    "author": {
+        "name": "Michael Watkins"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/AlwayzPoppin/Conduit"
+    },
+    "bugs": {
+        "url": "https://github.com/AlwayzPoppin/Conduit/issues"
+    },
+    "homepage": "https://github.com/AlwayzPoppin/Conduit#readme",
+    "keywords": [
+        "ai",
+        "agent",
+        "automation",
+        "gemini",
+        "antigravity",
+        "workflow",
+        "autonomous",
+        "orchestration",
+        "conduit",
+        "task-management"
+    ],
+    "publisher": "NexGenMeta",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Other",
+        "AI"
+    ],
+    "galleryBanner": {
+        "color": "#667eea",
+        "theme": "dark"
+    },
+    "activationEvents": [
+        "onView:conduit.contextPanel"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "conduit-sidebar",
+                    "title": "Conduit",
+                    "icon": "media/ConduitIcon.png"
+                }
+            ]
+        },
+        "views": {
+            "conduit-sidebar": [
+                {
+                    "type": "webview",
+                    "id": "conduit.contextPanel",
+                    "name": "Orchestration Dashboard",
+                    "icon": "media/ConduitIcon.png"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "conduit.openPanel",
+                "title": "Conduit: Open Dashboard"
+            },
+            {
+                "command": "conduit.logContribution",
+                "title": "Conduit: Log Contribution"
+            },
+            {
+                "command": "conduit.logHandoff",
+                "title": "Conduit: Log Handoff"
+            },
+            {
+                "command": "conduit.syncContext",
+                "title": "Conduit: Force Sync"
+            },
+            {
+                "command": "conduit.clearSession",
+                "title": "Conduit: Reset Session"
+            },
+            {
+                "command": "conduit.clearWorkspace",
+                "title": "Conduit: Purge State (.conduit)"
+            },
+            {
+                "command": "conduit.addPlan",
+                "title": "Conduit: Create Plan"
+            },
+            {
+                "command": "conduit.updatePlan",
+                "title": "Conduit: Update Plan Status"
+            },
+            {
+                "command": "conduit.learn",
+                "title": "Conduit: Remember Project Rule"
+            },
+            {
+                "command": "conduit.captureState",
+                "title": "Conduit: Capture UI State"
+            },
+            {
+                "command": "conduit.runBridge",
+                "title": "Conduit: Run Bridge Command [Internal]"
+            },
+            {
+                "command": "conduit.exec",
+                "title": "Conduit: Execute Shell Command (Unsafe)"
+            }
+        ]
+    },
+    "configuration": {
+        "title": "Conduit",
+        "properties": {
+            "conduit.enableAutoLoop": {
+                "type": "boolean",
+                "default": true,
+                "description": "Enable automated handoff between agents."
+            },
+            "conduit.enableLiveContext": {
+                "type": "boolean",
+                "default": true,
+                "description": "Enable real-time cursor and selection tracking."
+            },
+            "conduit.assetScanPattern": {
+                "type": "string",
+                "default": "**/*.{png,jpg,svg,wav,mp3,nx-anim,nx-prefab,json}",
+                "description": "Glob pattern for files to include in the asset map."
+            }
+        }
+    },
+    "keybindings": [
+        {
+            "command": "conduit.contextPanel.focus",
+            "key": "ctrl+shift+alt+t",
+            "mac": "cmd+shift+alt+t",
+            "when": "editorTextFocus"
+        },
+        {
+            "command": "conduit.syncContext",
+            "key": "ctrl+shift+alt+r",
+            "mac": "cmd+shift+alt+r"
+        },
+        {
+            "command": "conduit.captureState",
+            "key": "ctrl+shift+alt+s",
+            "mac": "cmd+shift+alt+s"
+        }
+    ],
+    "scripts": {
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile",
+        "test": "node ./out/test/runTest.js",
+        "lint": "eslint src --ext ts"
+    },
+    "devDependencies": {
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^20.10.0",
+        "@types/node-fetch": "^2.6.9",
+        "@types/vscode": "1.85.0",
+        "@typescript-eslint/eslint-plugin": "^6.13.0",
+        "@typescript-eslint/parser": "^6.13.0",
+        "@vscode/test-electron": "^2.5.2",
+        "eslint": "^8.55.0",
+        "glob": "^13.0.0",
+        "mocha": "^11.7.5",
+        "typescript": "^5.3.0"
+    },
+    "dependencies": {
+        "node-fetch": "^2.7.0",
+        "uuid": "^9.0.0",
+        "zod": "^3.23.8"
+    }
+}
