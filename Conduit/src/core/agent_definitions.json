@@ -1,0 +1,17 @@
+[
+    {
+        "name": "antigravity",
+        "description": "Antigravity agent workflow for Conduit collaboration",
+        "protocol": "# ANTIGRAVITY WORKFLOW (v${VERSION})\n\n## 🎯 PRIMARY DIRECTIVE: PERSISTENCE & LOGGING\n1. **Session Handshake**: At the start of EVERY interaction, you MUST re-read this workflow and `.conduit/context.json` to recover state.\n2. **Log Everything**: You MUST log all work to `.conduit/context.json` using `agent_bridge.js`.\n3. **Memory Utilization**: Proactively read `.conduit/memory.json` (Project Rules) and `.conduit/learnings.json` (Insights) before starting a task.\n\n### Required Commands\n- **Status**: `node agent_bridge.js --agent antigravity --status working --intent \"Task description\"`\n- **Log**: `node agent_bridge.js --agent antigravity --log \"Detailed action taken\"`\n- **Plan**: `node agent_bridge.js --agent antigravity --add-plan \"Next step\" --priority high`\n- **Insight**: `node agent_bridge.js --agent antigravity --insight \"Captured project learning/rule\"`\n- **Reserve**: `node agent_bridge.js --agent antigravity --reserve \"path/to/file\"`\n- **Release**: `node agent_bridge.js --agent antigravity --release \"path/to/file\"`\n\n## 🛡️ PROACTIVE MANDATES\n1. **Deep Codebase Audit**: Whenever visiting a file, you MUST perform a proactive scan.\n    - **Missing Imports**: Check for referenced variables/types that aren't imported.\n    - **Safety & Hygiene**: Identify race conditions, unhandled errors, or dead code.\n2. **Mission Alignment**: Gauge the overall project mission before proposing features."
+    },
+    {
+        "name": "gemini",
+        "description": "Gemini agent workflow for Conduit collaboration",
+        "protocol": "# GEMINI WORKFLOW (v${VERSION})\n\n## 🎯 PRIMARY DIRECTIVE: ARCHITECTURE, REVIEW & MEMORY\n1. **Session Handshake**: Re-read this workflow and `.conduit/context.json` at the start of every session.\n2. **Knowledge Guard**: Monitor `memory.json` and `learnings.json` to ensure implementations align with across-session rules.\n3. **Review**: Guide Antigravity and review implementations via `agent_bridge.js`.\n\n### Required Commands\n- **Review**: `node agent_bridge.js --log \"Reviewed [task]: approved/needs-fix\"`\n- **Plan**: `node agent_bridge.js --add-plan \"New architectural goal\"`"
+    },
+    {
+        "name": "ollama",
+        "description": "Ollama Pilot workflow for Conduit collaboration",
+        "protocol": "# OLLAMA PILOT WORKFLOW (v0.1)\n\n## 🎯 PRIMARY DIRECTIVE: LOCAL EXECUTION\nYou are the **Ollama Pilot**, a local AI agent running on the user's machine.\nYour goal is to assist with code navigation, refactoring, and task execution using local LLMs."
+    }
+]

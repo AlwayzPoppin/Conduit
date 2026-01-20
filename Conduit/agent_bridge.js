@@ -16,6 +16,108 @@ const HISTORY_PATH = path.join(CONDUIT_DIR, 'history.json');
 const RESULTS_PATH = path.join(CONDUIT_DIR, 'results.json');
 const LOCK_PATH = path.join(CONDUIT_DIR, 'lock');
 
+// IPC Configuration
+const IPC_PORT_FILE = path.join(CONDUIT_DIR, 'ipc_port');
+const DEFAULT_IPC_PORT = 47808;
+
+/**
+ * Discovers the current IPC port from the port file
+ */
+function getIpcPort() {
+    try {
+        if (fs.existsSync(IPC_PORT_FILE)) {
+            return parseInt(fs.readFileSync(IPC_PORT_FILE, 'utf8').trim(), 10);
+        }
+    } catch (e) { }
+    return DEFAULT_IPC_PORT;
+}
+
+/**
+ * Make a JSON-RPC call to the IPC server
+ * @returns {Promise<any>} Response result or null if server unavailable
+ */
+async function ipcCall(method, params = {}) {
+    const http = require('http');
+    const port = getIpcPort();
+    const url = `http://127.0.0.1:${port}`;
+
+    return new Promise((resolve) => {
+        const data = JSON.stringify({
+            jsonrpc: '2.0',
+            method,
+            params,
+            id: Date.now()
+        });
+
+        const req = http.request(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': data.length
+            },
+            timeout: 2000
+        }, (res) => {
+            let body = '';
+            res.on('data', chunk => { body += chunk; });
+            res.on('end', () => {
+                try {
+                    const response = JSON.parse(body);
+                    resolve(response.result || null);
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        });
+
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+        req.write(data);
+        req.end();
+    });
+}
+
+/**
+ * Async wrapper for process execution (replacement for execSync)
+ */
+function spawnAsync(command, args = [], options = {}) {
+    const { spawn } = require('child_process');
+    return new Promise((resolve, reject) => {
+        const child = spawn(command, args, {
+            shell: true,
+            stdio: 'inherit',
+            ...options
+        });
+        child.on('close', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`Process exited with code ${code}`));
+        });
+        child.on('error', reject);
+    });
+}
+
+/**
+ * Check if IPC server is available
+ */
+async function isIpcAvailable() {
+    const result = await ipcCall('getContext');
+    return result !== null;
+}
+
+/**
+ * Sanitizes file content to prevent prompt injection by stripping potential control sequences
+ * and limiting token size for efficiency.
+ * NOTE: Preserves JSON structure (brackets/braces) for code and data contexts.
+ */
+function sanitizeForContext(content, maxLength = 2000) {
+    if (!content) return '';
+    // Strip only control characters and prompt injection markers (not structural chars)
+    const sanitized = content.toString()
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')  // Non-printable control chars
+        .replace(/<\||\|>/g, '')  // LLM delimiters
+        .replace(/\b(system|user|assistant):/gi, '[$1]');  // Role keywords
+    return sanitized.length > maxLength ? sanitized.substring(0, maxLength) + '... [truncated]' : sanitized;
+}
+
 const MAX_BACKUPS = 5;
 const getBakPath = (i) => `${CONTEXT_PATH}.${i}`;
 
@@ -39,8 +141,8 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv.slice(2));
 
-async function acquireLock() {
-    while (true) {
+async function acquireLock(maxRetries = 10) {
+    for (let i = 0; i < maxRetries; i++) {
         try {
             // 'wx' flag fails if file exists, ensuring atomicity
             const fd = fs.openSync(LOCK_PATH, 'wx');
@@ -49,16 +151,41 @@ async function acquireLock() {
             return;
         } catch (e) {
             if (e.code !== 'EEXIST') throw e;
-            let lockAge = 0;
-            try { lockAge = Date.now() - fs.statSync(LOCK_PATH).mtimeMs; } catch (statErr) { continue; }
-            if (lockAge > 5000) {
-                try { fs.unlinkSync(LOCK_PATH); } catch (err) { }
-                continue;
+
+            // Check for stale lock (30s timeout) or dead process
+            try {
+                const stats = fs.statSync(LOCK_PATH);
+                const lockAge = Date.now() - stats.mtimeMs;
+                const lockPid = fs.readFileSync(LOCK_PATH, 'utf8').trim();
+
+                // Check if the process holding the lock is still alive
+                let isDead = false;
+                try {
+                    if (lockPid) process.kill(parseInt(lockPid, 10), 0);
+                } catch (e) {
+                    isDead = true; // Process doesn't exist
+                }
+
+                // Remove stale lock if process is dead or lock is too old
+                if (isDead || lockAge > 30000) {
+                    try { fs.unlinkSync(LOCK_PATH); } catch (unlinkErr) {
+                        if (unlinkErr.code !== 'ENOENT') console.error(`Lock cleanup warning: ${unlinkErr.message}`);
+                    }
+                    continue;
+                }
+            } catch (statErr) {
+                if (statErr.code === 'ENOENT') continue;
             }
-            console.error("❌ Resource locked. Retrying in 200ms...");
-            await new Promise(resolve => setTimeout(resolve, 200));
+
+            // Exponential backoff with jitter to prevent thundering herd
+            const baseDelay = Math.min(100 * Math.pow(2, i), 2000);
+            const jitter = Math.random() * 50;
+            const delay = baseDelay + jitter;
+            console.error(`⏳ Resource locked. Retry ${i + 1}/${maxRetries} in ${Math.round(delay)}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
+    throw new Error('Lock acquisition timeout after exponential backoff');
 }
 
 async function updateState() {
@@ -72,7 +199,7 @@ async function updateState() {
      * Self-Repair: Migrates old context schemas to the current version.
      */
     const migrateContext = (ctx) => {
-        const currentVersion = "0.42.4";
+        const currentVersion = "0.6.3";
         let changed = false;
         if (ctx.version !== currentVersion) {
             console.log(`🔧 Migrating context from ${ctx.version || 'legacy'} to ${currentVersion}...`);
@@ -378,7 +505,7 @@ async function updateState() {
 
             let context = {
                 session: { id: crypto.randomBytes(16).toString('hex'), started: new Date().toISOString() },
-                version: "0.42.4",
+                version: "0.6.3",
                 agentIntents: {},
                 lastSync: new Date().toISOString(),
                 contributions: [],
@@ -458,7 +585,83 @@ async function updateState() {
     }
 }
 
-updateState().catch(err => {
+async function main() {
+    if (!fs.existsSync(CONDUIT_DIR)) {
+        fs.mkdirSync(CONDUIT_DIR, { recursive: true });
+    }
+
+    // Phase 1: Try IPC-First Communication
+    const ipcAvailable = await isIpcAvailable();
+    if (ipcAvailable) {
+        console.log('📡 Conduit: Using real-time IPC channel.');
+
+        if (args.agent && (args.status || args.intent)) {
+            await ipcCall('updateIntent', {
+                agent: args.agent,
+                status: args.status,
+                intent: args.intent
+            });
+        }
+
+        if (args.log) {
+            await ipcCall('logContribution', {
+                action: args.log,
+                files: []
+            });
+        }
+
+        if (args.addPlan) {
+            await ipcCall('addPlan', {
+                task: args.addPlan,
+                assignee: args.agent || 'antigravity'
+            });
+        }
+
+        if (args.reserve) {
+            const success = await ipcCall('reserveFile', {
+                filePath: args.reserve,
+                agent: args.agent || 'antigravity'
+            });
+            if (success) console.log(`🔒 Reserved: ${args.reserve}`);
+            else console.log(`🚫 Failed to reserve: ${args.reserve} (already held)`);
+        }
+
+        if (args.release) {
+            await ipcCall('releaseFile', {
+                filePath: args.release,
+                agent: args.agent || 'antigravity'
+            });
+            console.log(`🔓 Released: ${args.release}`);
+        }
+
+        if (args.summary) {
+            const ctx = await ipcCall('getContext');
+            if (ctx) {
+                console.log("\n--- Conduit Orchestration Hub (Live) ---");
+                console.log(`Session:      ${ctx.session.id.slice(0, 8)}`);
+                console.log(`Current Task: ${ctx.currentTask || 'Idle'}`);
+                console.log("Agent Health:");
+                Object.entries(ctx.agentIntents || {}).forEach(([agent, data]) => {
+                    console.log(`  - ${agent.toUpperCase().padEnd(12)}: [${data.status.padEnd(7)}] ${data.intent}`);
+                });
+                console.log("---------------------------------\n");
+            }
+        }
+
+        // Handle other args as needed...
+        // For now, if we handled the primary ones, we can exit.
+        // If there are complex args not yet in IPC, they will fall through to file-based or be added later.
+        if (args.agent || args.log || args.addPlan || args.reserve || args.release || args.summary) {
+            return;
+        }
+    }
+
+    // Phase 2: Fallback to File-Based State Machine (Legacy/Robust Mode)
+    console.log('📦 Conduit: Falling back to file-based synchronization.');
+    await updateState();
+}
+
+main().catch(err => {
     console.error(`❌ Conduit Error: ${err.message}`);
     process.exit(1);
 });

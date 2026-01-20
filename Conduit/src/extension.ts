@@ -10,6 +10,7 @@ import { MetaSchema } from './core/meta';
 import * as path from 'path';
 import * as fs from 'fs';
 import { WorkflowBootstrap } from './WorkflowBootstrap';
+import { IpcServer } from './ipc/IpcServer';
 
 let contextManager: ContextManager;
 let fileWatcher: FileWatcher;
@@ -18,6 +19,7 @@ let statusBarManager: StatusBarManager;
 let conduit: Conduit;
 let lens: ExtensionLens;
 let sidebarProvider: ConduitSidebarProvider;
+let ipcServer: IpcServer;
 
 export async function activate(context: vscode.ExtensionContext) {
     const debugLogPath = path.join(context.extensionPath, 'conduit_debug.log');
@@ -60,7 +62,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         // Initialize V2 Core
         lens = new ExtensionLens();
-        conduit = new Conduit(lens);
+        conduit = new Conduit(lens, context.secrets);
 
         // Register a sample extension for V2 architecture verification
         conduit.registerExtension({
@@ -79,6 +81,10 @@ export async function activate(context: vscode.ExtensionContext) {
         // 5. Initialize Context and Watcher
         await contextManager.initialize();
         fileWatcher.start();
+
+        // 5.5 Start IPC Server for agent communication
+        ipcServer = new IpcServer(contextManager);
+        await ipcServer.start();
 
         // 6. Register Sidebar Provider
         sidebarProvider = new ConduitSidebarProvider(context, contextManager, memoryManager);
@@ -190,6 +196,12 @@ function registerConduitCommands(context: vscode.ExtensionContext, log: (msg: st
                     await contextManager.logContribution(action, activeFiles);
                     sidebarProvider.refresh();
                 }
+            }
+        },
+        {
+            id: 'conduit.configureApi',
+            handler: async () => {
+                await conduit.promptConfiguration();
             }
         },
         {
@@ -329,4 +341,5 @@ function registerConduitCommands(context: vscode.ExtensionContext, log: (msg: st
 
 export function deactivate() {
     if (fileWatcher) fileWatcher.stop();
+    if (ipcServer) ipcServer.stop();
 }

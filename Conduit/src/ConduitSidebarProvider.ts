@@ -19,6 +19,30 @@ export class ConduitSidebarProvider implements vscode.WebviewViewProvider {
         this._setupListeners();
     }
 
+    /**
+     * Security: Validates if a path is allowed for VFS operations.
+     * Uses path resolution to prevent symlink-based traversal attacks.
+     */
+    private _isPathAllowed(relativePath: string): boolean {
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+        if (!workspaceRoot) return false;
+
+        // Resolve to absolute path and verify it stays within workspace
+        const fullPath = path.resolve(workspaceRoot, relativePath);
+        const relative = path.relative(workspaceRoot, fullPath);
+        if (relative.startsWith('..') || path.isAbsolute(relative)) return false;
+
+        // Get normalized relative path for pattern checks
+        const normalized = path.relative(workspaceRoot, fullPath).replace(/\\/g, '/');
+
+        // Block sensitive files/directories
+        const blockedPatterns = ['.env', '.git/', 'package-lock.json', 'node_modules/'];
+        if (blockedPatterns.some(p => normalized.includes(p))) return false;
+
+        // Only allow .conduit and .agent directories
+        return normalized.startsWith('.conduit/') || normalized.startsWith('.agent/');
+    }
+
     private _setupListeners(): void {
         this._contextManager.onDidUpdate((ctx) => {
             const newLastSync = ctx.lastSync || '';
@@ -68,6 +92,10 @@ export class ConduitSidebarProvider implements vscode.WebviewViewProvider {
 
                     // VFS RPC Bridge (AAA Security Requirement)
                     case 'readFile': {
+                        if (!this._isPathAllowed(data.path)) {
+                            webviewView.webview.postMessage({ command: 'rpcResult', id: data.id, error: 'Access denied: path not in allowlist' });
+                            break;
+                        }
                         try {
                             const uri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0].uri, data.path);
                             const content = await vscode.workspace.fs.readFile(uri);
@@ -78,6 +106,10 @@ export class ConduitSidebarProvider implements vscode.WebviewViewProvider {
                         break;
                     }
                     case 'writeFile': {
+                        if (!this._isPathAllowed(data.path)) {
+                            webviewView.webview.postMessage({ command: 'rpcResult', id: data.id, error: 'Access denied: path not in allowlist' });
+                            break;
+                        }
                         try {
                             const uri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0].uri, data.path);
                             const content = Buffer.from(data.content, 'utf8');

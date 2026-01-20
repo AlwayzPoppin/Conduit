@@ -1,0 +1,10 @@
+{
+  "events": [
+    {
+      "timestamp": "2026-01-19T23:24:15.320Z",
+      "agent": "antigravity",
+      "event": "AGENT UPDATE: antigravity [active] intent: \"Session initialized via Antigravity workflow\""
+    }
+  ],
+  "maxEntries": 500
+}

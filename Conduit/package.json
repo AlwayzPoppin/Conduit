@@ -40,9 +40,7 @@
         "color": "#667eea",
         "theme": "dark"
     },
-    "activationEvents": [
-        "onView:conduit.contextPanel"
-    ],
+    "activationEvents": [],
     "main": "./out/extension.js",
     "contributes": {
         "viewsContainers": {
@@ -72,6 +70,10 @@
             {
                 "command": "conduit.logContribution",
                 "title": "Conduit: Log Contribution"
+            },
+            {
+                "command": "conduit.configureApi",
+                "title": "Conduit: Configure AI API Keys"
             },
             {
                 "command": "conduit.logHandoff",
@@ -132,6 +134,38 @@
                 "type": "string",
                 "default": "**/*.{png,jpg,svg,wav,mp3,nx-anim,nx-prefab,json}",
                 "description": "Glob pattern for files to include in the asset map."
+            },
+            "conduit.fileWatcher.patterns": {
+                "type": "array",
+                "default": [
+                    "**/*.ts",
+                    "**/*.tsx",
+                    "**/*.js",
+                    "**/*.jsx",
+                    "**/*.json",
+                    "**/*.md"
+                ],
+                "description": "Glob patterns for files to watch for changes."
+            },
+            "conduit.fileWatcher.ignore": {
+                "type": "array",
+                "default": [
+                    "**/node_modules/**",
+                    "**/.git/**",
+                    "**/out/**",
+                    "**/dist/**"
+                ],
+                "description": "Glob patterns for files and directories to ignore."
+            },
+            "conduit.memory.maxContributions": {
+                "type": "number",
+                "default": 50,
+                "description": "Maximum number of contributions to keep in context."
+            },
+            "conduit.memory.historyLimit": {
+                "type": "number",
+                "default": 100,
+                "description": "History entries threshold that triggers auto-summarization."
             }
         }
     },
@@ -168,6 +202,7 @@
         "@typescript-eslint/eslint-plugin": "^6.13.0",
         "@typescript-eslint/parser": "^6.13.0",
         "@vscode/test-electron": "^2.5.2",
+        "@vscode/vsce": "^3.7.1",
         "eslint": "^8.55.0",
         "glob": "^13.0.0",
         "mocha": "^11.7.5",
